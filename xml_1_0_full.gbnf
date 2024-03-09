@@ -1,0 +1,161 @@
+# Rules taken from the W3C Recommendation
+# Extensible Markup Language (XML) 1.0 (Fifth Edition)
+
+# Document
+root ::= prolog element Misc*
+
+# Character Range
+Char ::= "\x09" | "\x0A" | "\x0D" | [\x20-\uD7FF] | [\uE000-\uFFFD] |
+         [\U00010000-\U0010FFFF]
+
+# White Space
+S ::= ( "\x20" | "\x09" | "\x0D" | "\x0A" )+
+
+# Names and Tokens
+NameStartChar ::= ":" | [A-Z] | "_" | [a-z] | [\xC0-\xD6] | [\xD8-\xF6] |
+                  [\xF8-\u02FF]   | [\u0370-\u037D] | [\u037F-\u1FFF] |
+                  [\u200C-\u2FEF] | [\u3001-\uD7FF] | [\uF900-\uFDCF] |
+                  [\uFDF0-\uFFFD] | [\U00010000-\U000EFFFF]
+NameChar ::= NameStartChar | "-" | "." | [0-9] | "\xB7" |
+             [\u0300-\u036F] | [\u203F-\u2040]
+Name ::= NameStartChar (NameChar)*
+Names ::= Name ("\x20" Name)*
+Nmtoken ::= (NameChar)+
+Nmtokens ::= Nmtoken ("\x20" Nmtoken)*
+
+# Literals
+EntityValue ::= ( "\x22" ([^%&\x22] | PEReference | Reference)* "\x22" ) |
+                ( "\x27" ([^%&\x27] | PEReference | Reference)* "\x27" )
+AttValue ::= ( "\x22" ([^<&\x22] | Reference)* "\x22" ) |
+             ( "\x27" ([^<&\x27] | Reference)* "\x27" )
+SystemLiteral ::= ( "\x22" [^\x22]* "\x22") |
+                  ("\x27" [^\x27]* "\x27") 
+PubidLiteral ::= "\x22" (PubidChar | "\x27")* "\x22" | "\x27" PubidChar* "\x27"
+PubidChar ::= "\x20" | "\x0D" | "\x0A" | [a-z] | [A-Z] | [0-9] | [()+,./:=?;!*#@$_%\x2D]
+
+# Character Data
+CharData ::= (("]]" [^>]?) | [^<&])*
+
+# Comments
+Comment ::= "<!--"("-" [^\x2D]? | Char)* "-->"
+
+# Processing Instructions
+PI ::= "<?" PITarget (S [^?>]*)? "?>"
+PITarget ::= (([^X] | [^x]) ([^M] | [^m]) ([^L] | [^l])) | Name
+
+# CDATA Sections
+CDSect ::= CDStart CData CDEnd
+CDStart ::= "<![CDATA["
+CData ::= (("]]" [^>]) | Char)*
+CDEnd ::= "]]>"
+
+# Prolog
+prolog ::= XMLDecl? Misc* (doctypedecl Misc*)?
+XMLDecl ::= "<?xml" VersionInfo EncodingDecl? SDDecl? S? "?>"
+VersionInfo ::= S "version" Eq  ( ("\x27" VersionNum "\x27") |
+                                  ("\x22" VersionNum "\x22") )
+Eq ::= S? "=" S?
+VersionNum ::= "1.0"
+Misc ::= Comment | PI | S 
+
+# Document Type Definition
+doctypedecl ::= "<!DOCTYPE" S Name (S ExternalID)? S? ("[" intSubset "]" S?)? ">"
+DeclSep ::= PEReference | S
+intSubset ::= (markupdecl | DeclSep)*
+markupdecl ::= elementdecl | AttlistDecl | EntityDecl | NotationDecl | PI | Comment
+
+# External Subset
+extSubset ::= TextDecl? extSubsetDecl
+extSubsetDecl ::= ( markupdecl | conditionalSect | DeclSep )*
+
+# Standalone Document Declaration
+SDDecl ::= S "standalone" Eq ( ("\x27" ("yes" | "no") "\x27") |
+                               ("\x22" ("yes" | "no") "\x22") )
+
+# Element
+element ::= EmptyElemTag | (STag content ETag)
+
+# Start-tag
+STag ::= "<" Name (S Attribute)* S? ">"
+Attribute ::= Name Eq AttValue
+
+# End-tag
+ETag ::= "</" Name S? ">"
+
+# Content of Elements
+content ::= CharData? ((element | Reference | CDSect | PI | Comment) CharData?)*
+
+# Tags for Empty Elements
+EmptyElemTag ::= "<" Name (S Attribute)* S? "/>"
+
+# Element Type Declaration
+elementdecl ::= "<!ELEMENT" S Name S contentspec S? ">"
+contentspec ::= "EMPTY" | "ANY" | Mixed | children
+
+# Element-content Models
+children ::= (choice | seq) ("?" | "*" | "+")?
+cp ::= (Name | choice | seq) ("?" | "*" | "+")?
+choice ::= "(" S? cp ( S? "|" S? cp )* S? ")"
+seq ::= "(" S? cp ( S? "," S? cp )* S? ")"
+
+# Mixed-content Declaration
+Mixed ::= "(" S? "#PCDATA" (S? "|" S? Name)* S? ")*" | "(" S? "#PCDATA" S? ")" 
+
+# Attribute-list Declaration
+AttlistDecl ::= "<!ATTLIST" S Name AttDef* S? ">"
+AttDef ::= S Name S AttType S DefaultDecl
+
+# Attribute Types
+AttType ::= StringType | TokenizedType | EnumeratedType 
+StringType ::= "CDATA"
+TokenizedType ::= "ID" | "IDREF" | "IDREFS" | "ENTITY" | "ENTITIES" |
+                  "NMTOKEN" | "NMTOKENS"
+
+# Enumerated Attribute Types
+EnumeratedType ::= NotationType | Enumeration 
+NotationType ::= "NOTATION" S "(" S? Name (S? "|" S? Name)* S? ")" 
+Enumeration ::= "(" S? Nmtoken (S? "|" S? Nmtoken)* S? ")"
+
+# Attribute Defaults
+DefaultDecl ::= "#REQUIRED" | "#IMPLIED" | (("#FIXED" S)? AttValue)
+
+# Conditional Section
+conditionalSect ::= includeSect | ignoreSect
+includeSect ::= "<![" S? "INCLUDE" S? "[" extSubsetDecl "]]>" 
+ignoreSect ::= "<![" S? "IGNORE" S? "[" ignoreSectContents* "]]>"
+ignoreSectContents ::= Ignore ("<![" ignoreSectContents "]]>" Ignore)*
+Ignore ::= (("<!" [^\x5B]) | ("]]" [^>]) | Char)*
+
+# Character Reference
+CharRef ::= ("&#" [0-9]+ ";") | ("&#x" [0-9a-fA-F]+ ";")
+
+# Entity Reference
+Reference ::= EntityRef | CharRef
+EntityRef ::= "&" Name ";"
+PEReference ::= "%" Name ";"
+
+# Entity Declaration
+EntityDecl ::= GEDecl | PEDecl
+GEDecl ::= "<!ENTITY" S Name S EntityDef S? ">"
+PEDecl ::= "<!ENTITY" S "%" S Name S PEDef S? ">"
+EntityDef ::= EntityValue | (ExternalID NDataDecl?)
+PEDef ::= EntityValue | ExternalID
+
+# External Entity Declaration
+ExternalID ::= "SYSTEM" S SystemLiteral |
+               "PUBLIC" S PubidLiteral S SystemLiteral
+NDataDecl ::= S "NDATA" S Name
+
+# Text Declaration
+TextDecl ::= "<?xml" VersionInfo? EncodingDecl S? "?>"
+
+# Well-Formed External Parsed Entity
+# Skipped because never used in root
+
+# Encoding Declaration
+EncodingDecl ::= S "encoding" Eq ("\x22" EncName  "\x22" |  "\x27" EncName "\x27" )
+EncName ::= [A-Z] | [a-z] ([A-Z] | [a-z] | [0-9] | [._] | "-")*
+
+# Notation Declarations
+NotationDecl ::= "<!NOTATION" S Name S (ExternalID |  PublicID) S? ">"
+PublicID ::= "PUBLIC" S PubidLiteral
